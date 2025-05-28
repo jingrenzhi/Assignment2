@@ -1,0 +1,133 @@
+---
+title: "hrp203-reproducible-report"
+author: renzhi jing 
+format: html
+editor: visual
+---
+
+## Introduction
+
+Healthcare costs are influenced by a range of factors, including individual behaviors, demographic characteristics, and underlying medical conditions. However, the specific relationship between healthcare costs and these variables are remains largely unclear. In this report, I will use simulated data to explore these relationships, focusing on key covariates known to affect healthcare costs, such as gender, age, smoking status, and the presence of cardiac conditions. The analysis illustrates the core steps typically used to investigate these factors in real-world settings, using actual healthcare cost data and individual-level observational datasets.
+
+## Methods
+
+### Required packages
+
+I first load all required libraries used in this study.
+
+```{r, echo=TRUE, results='hide', warning=FALSE, message=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(corrplot)
+```
+
+### Simulated data
+
+As a first step, I will read simulated cohort data using the function of `read.csv`, and then preview the first few rows of data by `head`:
+
+```{r}
+data = read.csv('../assignment4/cohort.csv')  # use relative directory
+head(data)
+```
+
+As shown in the table above, the dataset includes five columns. Below, I provide summary statistics for each of these columns:
+
+```{r}
+summary(data)  # show statistics 
+```
+
+As we could see from above, the dataset includes the following columns:
+
+\- **smoke**: a categorical variable where 1 indicates a smoker and 0 indicates a non-smoker.
+
+\- **female**: a categorical variable where 1 represents female and 0 represents male.
+
+\- **age**: a continuous variable representing the individual's age.
+
+\- **cardiac**: a categorical variable where 1 indicates the presence of a cardiac condition and 0 indicates its absence.
+
+\- **cost**: outcome variable, representing healthcare cost as a continuous variable.
+
+### 
+
+After loading the data, I examine the correlations between variables to identify potential correlations predictors and the outcome variable.
+
+```{r}
+cor_matrix <- cor(data)
+corrplot(cor_matrix, 
+         method = "color",    
+         type = "upper",       
+         col = colorRampPalette(c("blue", "white", "red"))(200),
+         tl.cex = 1.5,  
+         number.cex = 1,
+         tl.col = "black")  
+```
+
+From the correlation heatmap above, I observe that healthcare cost is positively correlated with the smoking indicator, suggesting that smokers tend to have higher costs. Similarly, cost is positively correlated with age, indicating that older individuals generally incur higher healthcare expenses. There is also a positive correlation between cost and the cardiac condition indicator, meaning individuals with cardiac disease tend to have higher costs. In contrast, healthcare cost is negatively correlated with the female indicator, suggesting that being female is associated with lower healthcare costs. **These strong correlations suggest that linear relationships may exist between these covariates and the healthcare cost, which can be modeled through regression analysis.**
+
+### Model Specification
+
+We model the relationship using a linear regression as shown below:
+
+$$
+\hat{Y}_i = \beta_0 + \beta_1 X_{i1} + \beta_2 X_{i2} + \beta_3 X_{i3} + \beta_4 X_{i4}+u_{i}
+$$ where: - $\hat{Y}_i$: estimated healthcare cost for individual $i$\
+- $X\_{i1}$: smoke (1 = smoker, 0 = non-smoker)\
+- $X\_{i2}$: female (1 = female, 0 = male)\
+- $X\_{i3}$: age\
+- $X\_{i4}$: cardiac (1=cardiac disease, 0=no cardiac disease)\
+
+## Results
+
+I fit a linear regression model (`lm` function) to evaluate how various factors affect the healthcare costs.
+
+```{r}
+model <- lm(
+  cost ~ smoke + female + age  + cardiac,   # linear regression 
+  data = data
+)
+
+summary(model)   # print model results
+
+```
+
+The linear regression results shown above report that all four covariates (smoking status, gender, age, and cardiac condition) are significantly associated with healthcare costs (p \< 0.001 for all covariates). Specifically, being a smoker is associated with an increase of approximately \$542 in healthcare costs, while being female is associated with a reduction of about \$253. Each additional year of age increases cost by roughly \$15.78, and having a cardiac condition is associated to an increase of about \$408. The model has a R-square of 0.7551, which means that the model explains approximately 75.5% of the variation in healthcare costs.
+
+Based on the fitted model, we can generate predicted healthcare costs and examine the residuals to assess model performance. The plot below shows healthcare costs versus the predicted costs, with the red dashed line representing the line $y=x$, which indicates perfect prediction. Most of the data points are near the line, suggesting the model performs reasonably well overall.
+
+```{r}
+data$predicted_cost <- predict(model, newdata = data)  # estimate predicted cost
+ggplot(data, aes(x = predicted_cost, y = cost)) +
+  geom_point(alpha = 0.5) +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  labs(
+    x = "predicted healthcare cost",
+    y = "real cost"
+  ) +
+  theme_minimal()
+```
+
+To ensure the validity of the linear regression model, I also examin the residuals to check whether they meet the assumptions of linear regression. The plot below shows that the residuals appear to be randomly distributed with no clear patterns or systematic structure. There is no evidence of a strong curvature or megaphone shape, which suggests that the assumptions of linearity are reasonably satisfied. These results indicate that the linear model is appropriate for this analysis.
+
+```{r}
+data$residuals <- residuals(model)   # estimate model residuals
+ggplot(data, aes(x = predicted_cost, y = residuals)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  labs(
+    x = "predicted healthcare cost",
+    y = "residual"
+  ) +
+  theme_minimal()
+
+```
+
+## Discussion
+
+In this analysis, I examine the relationship between healthcare costs and key influencing factors, and find that costs are significantly associated with individual characteristics such as smoking status, gender, age, and the presence of cardiac conditions. Due to privacy concerns, the analysis is conducted using simulated data; however, all key steps are fully reproducible and can be applied to real-world datasets. Based on the simulated data, the results show that all predictors in the model are statistically significant, and the full model explains over 75% of the variation in healthcare costs.
+
+The residual plot indicates that the linear model is appropriate, with residuals generally centered around zero and no evident patterns or heteroscedasticity. The actual vs. predicted cost plot further supports the model's accuracy, as most observations fall close to the line of perfect prediction. However, a few outliers exhibit residuals as large as \$500, which may be due to unmeasured factors (such as socioeconomic status or the presence of other medical conditions) not captured in the simulated data.
+
+## Statement
+
+I did not use generative AI technology (e.g., ChatGPT) to complete any portion of the work.
