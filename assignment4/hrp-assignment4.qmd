@@ -1,9 +1,8 @@
 ---
 title: "hrp203-reproducible-report"
 author: renzhi jing 
-format: html
+format: pdf
 editor: visual
-output-dir: docs
 ---
 
 ## Introduction
