@@ -26,7 +26,7 @@ library(corrplot)
 As a first step, I will read simulated cohort data using the function of `read.csv`, and then preview the first few rows of data by `head`:
 
 ```{r}
-data = read.csv('../assignment4/cohort.csv')  # use relative directory
+data = read.csv('./assignment4/cohort.csv')  # use relative directory
 head(data)
 ```
 
